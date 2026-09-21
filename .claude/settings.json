@@ -1,0 +1,41 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      { "hooks": [ { "type": "command", "command": "powershell.exe",
+        "args": ["-NoProfile", "-Command",
+            "$r=New-Object System.IO.StreamReader([Console]::OpenStandardInput(),[System.Text.Encoding]::UTF8); $i=$r.ReadToEnd(); [System.IO.File]::AppendAllText((Join-Path $env:CLAUDE_PROJECT_DIR 'hook-log.jsonl'), $i + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))"] } ] }
+    ],
+    "PreToolUse": [
+      { "hooks": [ { "type": "command", "command": "powershell.exe",
+        "args": ["-NoProfile", "-Command",
+            "$r=New-Object System.IO.StreamReader([Console]::OpenStandardInput(),[System.Text.Encoding]::UTF8); $i=$r.ReadToEnd(); [System.IO.File]::AppendAllText((Join-Path $env:CLAUDE_PROJECT_DIR 'hook-log.jsonl'), $i + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))"] } ] }
+    ],
+
+    "PostToolUse": [
+      { "hooks": [ { "type": "command", "command": "powershell.exe",
+        "args": ["-NoProfile", "-Command",
+            "$r=New-Object System.IO.StreamReader([Console]::OpenStandardInput(),[System.Text.Encoding]::UTF8); $i=$r.ReadToEnd(); [System.IO.File]::AppendAllText((Join-Path $env:CLAUDE_PROJECT_DIR 'hook-log.jsonl'), $i + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))"] } ] }
+    ],
+    "PostToolUseFailure": [
+      { "hooks": [ { "type": "command", "command": "powershell.exe",
+        "args": ["-NoProfile", "-Command",
+            "$r=New-Object System.IO.StreamReader([Console]::OpenStandardInput(),[System.Text.Encoding]::UTF8); $i=$r.ReadToEnd(); [System.IO.File]::AppendAllText((Join-Path $env:CLAUDE_PROJECT_DIR 'hook-log.jsonl'), $i + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))"] } ] }
+    ],
+    "Stop": [
+      { "hooks": [ { "type": "command", "command": "powershell.exe",
+        "args": ["-NoProfile", "-Command",
+            "$r=New-Object System.IO.StreamReader([Console]::OpenStandardInput(),[System.Text.Encoding]::UTF8); $i=$r.ReadToEnd(); [System.IO.File]::AppendAllText((Join-Path $env:CLAUDE_PROJECT_DIR 'hook-log.jsonl'), $i + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))"] } ] }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Edit(./**)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status *)",
+      "PowerShell(git add *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git status *)"
+    ]
+  }
+}

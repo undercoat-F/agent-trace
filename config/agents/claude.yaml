@@ -1,0 +1,4 @@
+name: claude
+kind: otlp
+service_name: claude-code
+signals: traces,metrics,logs

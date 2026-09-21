@@ -1,0 +1,7 @@
+hook-log.jsonl
+otel-out*.txt
+otel-data*/
+jsonoutputtest*/
+
+__pycache__/
+*.pyc

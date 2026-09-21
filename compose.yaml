@@ -1,0 +1,35 @@
+services:
+  mysql:
+    image: mysql:latest
+    container_name: agent-trace-mysql
+
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: agent_trace
+      MYSQL_USER: agenttrace
+      MYSQL_PASSWORD: agenttrace
+    
+    ports:
+      - "3306:3306"
+    
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: agent-trace-otel-collector
+    restart: unless-stopped
+
+    command: ["--config=/etc/otel-collector-config.yaml"]
+
+    volumes:
+      - ./config/generated/collector.yaml:/etc/otel-collector-config.yaml:ro
+      - ./otel-data:/var/log/otel
+      - ./jsonoutputtest:/var/log/agents/claude:ro
+
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+
+volumes:
+  mysql_data:

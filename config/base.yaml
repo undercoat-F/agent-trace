@@ -1,0 +1,23 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+{{RECEIVERS}}
+
+processors:
+  batch: {}
+
+exporters:
+{{EXPORTERS}}
+  debug:
+    verbosity: detailed
+
+connectors:
+{{CONNECTORS}}
+
+service:
+  pipelines:
+{{PIPELINES}}

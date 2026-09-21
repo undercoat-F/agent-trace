@@ -1,0 +1,6 @@
+name: claude-hook
+kind: filelog
+output_name: claude
+output_file: hook-logs.jsonl
+input: /var/log/agents/claude/hook-log.jsonl
+signals: logs

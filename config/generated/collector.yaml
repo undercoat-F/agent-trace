@@ -1,0 +1,107 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+  file_log/claude-hook:
+    include:
+      - /var/log/agents/claude/hook-log.jsonl
+    start_at: beginning
+    operators:
+      - type: json_parser
+        parse_from: body
+      - type: add
+        field: attributes.agent
+        value: claude
+
+processors:
+  batch: {}
+
+exporters:
+  file/logs/claude-hook:
+    path: /var/log/otel/claude/hook-logs.jsonl
+  file/traces/claude:
+    path: /var/log/otel/claude/traces.jsonl
+  file/metrics/claude:
+    path: /var/log/otel/claude/metrics.jsonl
+  file/logs/claude:
+    path: /var/log/otel/claude/logs.jsonl
+  file/traces/githubcopilot:
+    path: /var/log/otel/githubcopilot/traces.jsonl
+  file/metrics/githubcopilot:
+    path: /var/log/otel/githubcopilot/metrics.jsonl
+  file/logs/githubcopilot:
+    path: /var/log/otel/githubcopilot/logs.jsonl
+  debug:
+    verbosity: detailed
+
+connectors:
+  routing/logs:
+    table:
+      - context: resource
+        condition: 'resource.attributes["service.name"] == "claude-code"'
+        pipelines: [logs/claude]
+      - context: resource
+        condition: 'resource.attributes["service.name"] == "copilot-chat"'
+        pipelines: [logs/githubcopilot]
+  routing/metrics:
+    table:
+      - context: resource
+        condition: 'resource.attributes["service.name"] == "claude-code"'
+        pipelines: [metrics/claude]
+      - context: resource
+        condition: 'resource.attributes["service.name"] == "copilot-chat"'
+        pipelines: [metrics/githubcopilot]
+  routing/traces:
+    table:
+      - context: resource
+        condition: 'resource.attributes["service.name"] == "claude-code"'
+        pipelines: [traces/claude]
+      - context: resource
+        condition: 'resource.attributes["service.name"] == "copilot-chat"'
+        pipelines: [traces/githubcopilot]
+
+service:
+  pipelines:
+    logs/claude-hook:
+      receivers: [file_log/claude-hook]
+      processors: [batch]
+      exporters: [file/logs/claude-hook, debug]
+    traces/claude:
+      receivers: [routing/traces]
+      processors: [batch]
+      exporters: [file/traces/claude, debug]
+    metrics/claude:
+      receivers: [routing/metrics]
+      processors: [batch]
+      exporters: [file/metrics/claude, debug]
+    logs/claude:
+      receivers: [routing/logs]
+      processors: [batch]
+      exporters: [file/logs/claude, debug]
+    traces/githubcopilot:
+      receivers: [routing/traces]
+      processors: [batch]
+      exporters: [file/traces/githubcopilot, debug]
+    metrics/githubcopilot:
+      receivers: [routing/metrics]
+      processors: [batch]
+      exporters: [file/metrics/githubcopilot, debug]
+    logs/githubcopilot:
+      receivers: [routing/logs]
+      processors: [batch]
+      exporters: [file/logs/githubcopilot, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [routing/logs]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [routing/metrics]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [routing/traces]

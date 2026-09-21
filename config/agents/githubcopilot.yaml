@@ -1,0 +1,4 @@
+name: githubcopilot
+kind: otlp
+service_name: copilot-chat
+signals: traces,metrics,logs
