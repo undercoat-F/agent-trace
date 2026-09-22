@@ -55,6 +55,15 @@ VS Code の Java 拡張は各モジュールごとに `bin/` へ影のビルド�
 - 反映は次回の `claude` 起動から。実行中のセッションには効かない。
 - settings.json 反映後の実データで確認済み: `event.name`(`user_prompt`/`tool_decision`/`tool_result`/`api_request`/`assistant_response` など)、束ねる鍵は `prompt.id`(公式ドキュメントの記述と食い違う項目あり。実データを正とする。`backend/ingest/src/test/resources/claude-code-real-sample.jsonl` に個人情報を伏せた実例あり)。
 
+## Jev(判定層)API キー
+
+- 保管場所: リポジトリ直下 `.env` の `jevkey`(`.gitignore` 済み)。
+- `compose.yaml` が `${jevkey}` として参照し、`ingest` コンテナに `JEV_API_KEY` として渡す。**Compose 標準の `.env` 変数展開だけを使っており、Claude が値を読み書きしたことは一度もない。**
+- `ingest` 側は `jev.api-key=${JEV_API_KEY:}`(未設定なら空文字、`JevClient` が「利用不可」として静かに動作するだけでアプリ全体は落ちない)。
+- 提供元: TypeSafe AI 社(2026-09-15発表、早期アクセス中)。公式SDKは Python/JavaScript のみで **Java の公式SDKは無い**。有志実装(`jev-java` 等)は、ほぼ同一の説明文を持つリポジトリが複数あり不審だったため使わず、`backend/ingest/.../jev/` に自前の薄いクライアントを実装した。
+- エンドポイント: `POST https://api.typesafe.ai/v1/systemone`(`jev.base-url` で変更可)。
+- 動作確認用: `GET /internal/jev/selftest`(`ingest`、`127.0.0.1:8081`)。固定の無害な質問を1回投げ、数値結果だけを返す(キーやヘッダーは一切含まれない)。2026-09-22 に実際のAPIへの疎通を確認済み(`model: jev-1.13.0`)。
+
 ## Docker
 
 | 名前 | 中身 | ポート | 保存先 |
@@ -87,7 +96,7 @@ VS Code の Java 拡張は各モジュールごとに `bin/` へ影のビルド�
 | MySQL `agent_trace`.`spans` | Copilot などのOTLPトレースを展開したもの(`trace_id`/`span_id` 単位) | volume |
 | MySQL `agent_trace`.`events`/`prompts` | Claude Code のログ形式テレメトリを展開したもの(`prompt_id` 単位で束ねる)。`prompts` は `events` からの導出データで、都度再集計される | volume |
 | MySQL `agent_trace`.`commits` | `PostToolUse` フック(`scripts/hook-detect-commit.ps1`)で検出した git commit。`prompt_id` で `events`/`prompts` に繋がる | volume |
-| リポジトリ直下 `.env` | `jevkey=` のプレースホルダー(Jev用と思われる)。`.gitignore` 済み、中身は触っていない | 対象外 |
+| リポジトリ直下 `.env` | `jevkey=<APIキー>`。`.gitignore` 済み、中身は一度も見ていない(ユーザーの意向) | 対象外 |
 
 ## 既知の注意点
 
