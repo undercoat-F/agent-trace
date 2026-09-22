@@ -1,4 +1,4 @@
-import type { SpanDetail, SpanRow, StatusFilter } from "./types";
+import type { PromptDetail, PromptRow, SpanDetail, SpanRow, StatusFilter } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8082";
 
@@ -48,4 +48,24 @@ export function fetchSpanDetail(traceId: string, spanId: string): Promise<SpanDe
 
 export function fetchTools(): Promise<string[]> {
   return get<string[]>("/api/tools");
+}
+
+export interface PromptSearchParams {
+  q?: string;
+  failuresOnly?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export function searchPrompts(params: PromptSearchParams): Promise<PromptRow[]> {
+  const qs = new URLSearchParams();
+  if (params.q) qs.set("q", params.q);
+  if (params.failuresOnly) qs.set("failuresOnly", "true");
+  qs.set("limit", String(params.limit ?? 50));
+  qs.set("offset", String(params.offset ?? 0));
+  return get<PromptRow[]>(`/api/prompts?${qs}`);
+}
+
+export function fetchPromptDetail(promptId: string): Promise<PromptDetail> {
+  return get<PromptDetail>(`/api/prompts/${promptId}`);
 }

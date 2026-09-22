@@ -1,4 +1,4 @@
-// Mirrors backend/search's SpanRow / SpanDetail JSON shape exactly.
+// Mirrors backend/search's SpanRow / SpanDetail / PromptRow / PromptDetail JSON shape exactly.
 
 export interface SpanRow {
   traceId: string;
@@ -21,3 +21,34 @@ export interface SpanDetail {
 }
 
 export type StatusFilter = "" | "ok" | "error";
+
+export interface PromptRow {
+  promptId: string;
+  sessionId: string;
+  promptPreview: string | null;
+  startedAt: string;
+  endedAt: string;
+  toolCalls: number;
+  failures: number;
+}
+
+export interface PromptEventSummary {
+  eventId: string;
+  eventSequence: number;
+  eventName: string;
+  occurredAt: string;
+  toolName: string | null;
+  toolSuccess: string | null; // "true" | "false" | null — a JSON string in the source data, not a boolean
+}
+
+export interface PromptDetail {
+  promptId: string;
+  sessionId: string;
+  userPrompt: string | null;
+  assistantResponse: string | null;
+  startedAt: string;
+  endedAt: string;
+  toolCalls: number;
+  failures: number;
+  events: PromptEventSummary[];
+}

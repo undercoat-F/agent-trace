@@ -49,7 +49,7 @@ services:
     restart: unless-stopped
 
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/agent_trace?connectionTimeZone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/agent_trace?connectionTimeZone=UTC&characterEncoding=UTF-8
       DB_USER: agenttrace
       DB_PASSWORD: agenttrace
 
@@ -70,7 +70,7 @@ services:
     restart: unless-stopped
 
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/agent_trace?connectionTimeZone=UTC
+      DB_URL: jdbc:mysql://mysql:3306/agent_trace?connectionTimeZone=UTC&characterEncoding=UTF-8
       DB_USER: agenttrace_ro
       DB_PASSWORD: JtdiJzIUEN2Fep6ZOJubaFFP
       UI_ORIGIN: http://localhost:5173
