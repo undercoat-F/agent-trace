@@ -86,6 +86,8 @@ VS Code の Java 拡張は各モジュールごとに `bin/` へ影のビルド�
 | MySQL `agent_trace`.`raw_payloads` | 生JSON、SHA-256で重複排除。全ての元データ | volume |
 | MySQL `agent_trace`.`spans` | Copilot などのOTLPトレースを展開したもの(`trace_id`/`span_id` 単位) | volume |
 | MySQL `agent_trace`.`events`/`prompts` | Claude Code のログ形式テレメトリを展開したもの(`prompt_id` 単位で束ねる)。`prompts` は `events` からの導出データで、都度再集計される | volume |
+| MySQL `agent_trace`.`commits` | `PostToolUse` フック(`scripts/hook-detect-commit.ps1`)で検出した git commit。`prompt_id` で `events`/`prompts` に繋がる | volume |
+| リポジトリ直下 `.env` | `jevkey=` のプレースホルダー(Jev用と思われる)。`.gitignore` 済み、中身は触っていない | 対象外 |
 
 ## 既知の注意点
 

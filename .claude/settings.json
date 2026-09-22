@@ -14,7 +14,10 @@
     "PostToolUse": [
       { "hooks": [ { "type": "command", "command": "powershell.exe",
         "args": ["-NoProfile", "-Command",
-            "$r=New-Object System.IO.StreamReader([Console]::OpenStandardInput(),[System.Text.Encoding]::UTF8); $i=$r.ReadToEnd(); [System.IO.File]::AppendAllText((Join-Path $env:CLAUDE_PROJECT_DIR 'hook-log.jsonl'), $i + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))"] } ] }
+            "$r=New-Object System.IO.StreamReader([Console]::OpenStandardInput(),[System.Text.Encoding]::UTF8); $i=$r.ReadToEnd(); [System.IO.File]::AppendAllText((Join-Path $env:CLAUDE_PROJECT_DIR 'hook-log.jsonl'), $i + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false)))"] } ] },
+      { "hooks": [ { "type": "command", "command": "powershell.exe",
+        "args": ["-NoProfile", "-Command",
+            "& (Join-Path $env:CLAUDE_PROJECT_DIR 'scripts\\hook-detect-commit.ps1')"] } ] }
     ],
     "PostToolUseFailure": [
       { "hooks": [ { "type": "command", "command": "powershell.exe",
