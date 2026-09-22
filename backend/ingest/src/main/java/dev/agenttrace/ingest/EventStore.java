@@ -21,8 +21,14 @@ import dev.agenttrace.ingest.LogMapper.EventRow;
 @Repository
 public class EventStore {
 
-	/** @param duplicate true when this exact payload had been stored before */
-	public record Result(long rawPayloadId, boolean duplicate, int events) {
+	/**
+	 * @param duplicate                    true when this exact payload had been stored before
+	 * @param promptsReadyToJudge          prompt_ids whose assistant_response arrived in this batch — the
+	 *                                     best available proxy for "this turn is basically done". Caller
+	 *                                     triggers judging with these AFTER this method's transaction has
+	 *                                     committed, since judging reads the prompts row this same call wrote.
+	 */
+	public record Result(long rawPayloadId, boolean duplicate, int events, Set<String> promptsReadyToJudge) {
 	}
 
 	private final JdbcClient jdbc;
@@ -37,9 +43,10 @@ public class EventStore {
 	public Result store(String body, List<EventRow> events) {
 		RawPayloadStore.Result raw = rawStore.store("logs", body);
 		if (raw.duplicate()) {
-			return new Result(raw.id(), true, 0); // events were written with the first copy
+			return new Result(raw.id(), true, 0, Set.of()); // events were written with the first copy
 		}
 		Set<String> promptIds = new LinkedHashSet<>();
+		Set<String> readyToJudge = new LinkedHashSet<>();
 		for (EventRow e : events) {
 			jdbc.sql("""
 					INSERT INTO events (event_id, session_id, event_sequence, prompt_id, event_name,
@@ -55,12 +62,15 @@ public class EventStore {
 					.update();
 			if (e.promptId() != null) {
 				promptIds.add(e.promptId());
+				if ("assistant_response".equals(e.eventName())) {
+					readyToJudge.add(e.promptId());
+				}
 			}
 		}
 		for (String promptId : promptIds) {
 			reaggregatePrompt(promptId);
 		}
-		return new Result(raw.id(), false, events.size());
+		return new Result(raw.id(), false, events.size(), readyToJudge);
 	}
 
 	private void reaggregatePrompt(String promptId) {

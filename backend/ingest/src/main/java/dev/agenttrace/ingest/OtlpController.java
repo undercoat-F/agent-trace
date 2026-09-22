@@ -15,6 +15,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 import dev.agenttrace.ingest.LogMapper.EventRow;
 import dev.agenttrace.ingest.SpanMapper.SpanRow;
+import dev.agenttrace.ingest.jev.PromptJudge;
 
 /**
  * OTLP/HTTP receiver (JSON encoding). The OTel Collector forwards here with
@@ -32,14 +33,16 @@ public class OtlpController {
 	private final PayloadStore spanStore;
 	private final LogMapper logMapper;
 	private final EventStore eventStore;
+	private final PromptJudge promptJudge;
 
 	public OtlpController(JsonMapper mapper, SpanMapper spanMapper, PayloadStore spanStore,
-			LogMapper logMapper, EventStore eventStore) {
+			LogMapper logMapper, EventStore eventStore, PromptJudge promptJudge) {
 		this.mapper = mapper;
 		this.spanMapper = spanMapper;
 		this.spanStore = spanStore;
 		this.logMapper = logMapper;
 		this.eventStore = eventStore;
+		this.promptJudge = promptJudge;
 	}
 
 	@PostMapping(path = "/v1/traces", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -63,6 +66,9 @@ public class OtlpController {
 		List<EventRow> events = logMapper.map(root);
 		EventStore.Result r = eventStore.store(body, events);
 		log.info("logs raw={} duplicate={} events={}", r.rawPayloadId(), r.duplicate(), r.events());
+		// After store()'s transaction has committed, so judging reads the prompts
+		// row this same call just wrote (concept doc principle 2: judge at ingest time).
+		r.promptsReadyToJudge().forEach(promptJudge::judgeAsync);
 		return json(OTLP_OK);
 	}
 
