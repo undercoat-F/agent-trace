@@ -8,6 +8,7 @@
 .EXAMPLE
   .\setup-vscode-otel.ps1                # enabled + captureContent (OTLP to collector)
   .\setup-vscode-otel.ps1 -FileExport    # also exporterType=file, outfile=<root>\otel-data\copilot-otel.jsonl
+  .\setup-vscode-otel.ps1 -Otlp          # undo -FileExport (back to the default OTLP export)
 
 .NOTES
   - settings.json is JSONC (allows comments). To avoid corrupting comments or
@@ -22,12 +23,19 @@ param(
     # JSONL file instead of the OTLP collector. Opt-in: with this on, Copilot
     # telemetry no longer reaches the collector.
     [switch]$FileExport,
+    # Undo -FileExport: remove exporterType and outfile so Copilot falls back to
+    # its default OTLP export to the collector.
+    [switch]$Otlp,
     # Destination of the JSONL file. Default is derived from the project root,
     # so the repo can be moved to another machine without editing anything.
     [string]$OutFile
 )
 
 $ErrorActionPreference = "Stop"
+
+if ($FileExport -and $Otlp) {
+    Write-Error "-FileExport and -Otlp are mutually exclusive."
+}
 
 # Required OTel settings (key -> literal value text to insert)
 $RequiredEntries = [ordered]@{
@@ -109,10 +117,12 @@ function Merge-OtelSettings {
     $lines = foreach ($kv in $missing.GetEnumerator()) {
         "  `"$($kv.Key)`": $($kv.Value),"
     }
-    $snippet = ($lines -join "`n") + "`n"
+    # No trailing newline: the original text after "{" already starts with one,
+    # so this keeps insert/remove exact inverses (no stray blank lines).
+    $snippet = ($lines -join "`n")
     if (-not $hasExistingContent) {
         # Empty object: drop the trailing comma on the last inserted key
-        $snippet = $snippet.TrimEnd(",`n") + "`n"
+        $snippet = $snippet.TrimEnd(',')
     }
 
     $updated = $original.Substring(0, $firstBraceIndex + 1) + "`n" + $snippet + $original.Substring($firstBraceIndex + 1)
@@ -120,8 +130,33 @@ function Merge-OtelSettings {
     Write-Host "Updated: $SettingsPath ($($missing.Count) key(s) added)"
 }
 
+function Remove-FileExportSettings {
+    param([string]$SettingsPath)
+
+    $original = Get-Content -LiteralPath $SettingsPath -Raw -Encoding utf8
+    # Whole single-line entries for exporterType / outfile (as inserted by -FileExport)
+    $pattern = '(?m)^[ \t]*"github\.copilot\.chat\.otel\.(?:exporterType|outfile)"[ \t]*:[^\r\n]*(?:\r?\n|$)'
+
+    if ($original -notmatch $pattern) {
+        Write-Host "No file-export keys found, skipping: $SettingsPath"
+        return
+    }
+
+    $backupPath = "$SettingsPath.bak-$(Get-Date -Format 'yyyyMMddHHmmss')"
+    Copy-Item -LiteralPath $SettingsPath -Destination $backupPath
+    Write-Host "Backup created: $backupPath"
+
+    $updated = [regex]::Replace($original, $pattern, '')
+    Set-Content -LiteralPath $SettingsPath -Value $updated -Encoding utf8 -NoNewline
+    Write-Host "Updated: $SettingsPath (file-export keys removed; OTLP is the default)"
+}
+
 foreach ($t in $targets) {
-    Merge-OtelSettings -SettingsPath $t
+    if ($Otlp) {
+        if (Test-Path $t) { Remove-FileExportSettings -SettingsPath $t }
+    } else {
+        Merge-OtelSettings -SettingsPath $t
+    }
 }
 
 Write-Host ""
