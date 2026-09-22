@@ -17,6 +17,9 @@ services:
 
     volumes:
       - mysql_data:/var/lib/mysql
+      # Only runs on a brand-new (empty) volume; see docs/environment.md for
+      # applying it by hand to an existing one.
+      - ./infra/mysql/init:/docker-entrypoint-initdb.d:ro
 
   otel-collector:
     # Pinned by digest, same reasoning as mysql above. Reported version: 0.161.0.
@@ -55,6 +58,28 @@ services:
 
     ports:
       - "127.0.0.1:8081:8080"   # localhost only; the collector reaches it as http://ingest:8080
+
+  # Read-only query API over MySQL, for the React UI. Deterministic SQL only
+  # (concept doc §5) — no judge/Jev calls happen on this path.
+  search:
+    build:
+      context: ./backend
+      args:
+        MODULE: search
+    container_name: agent-trace-search
+    restart: unless-stopped
+
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/agent_trace?connectionTimeZone=UTC
+      DB_USER: agenttrace_ro
+      DB_PASSWORD: JtdiJzIUEN2Fep6ZOJubaFFP
+      UI_ORIGIN: http://localhost:5173
+
+    depends_on:
+      - mysql
+
+    ports:
+      - "127.0.0.1:8082:8080"
 
 volumes:
   mysql_data:
