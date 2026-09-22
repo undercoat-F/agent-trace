@@ -13,7 +13,7 @@ $root = Split-Path -Parent $PSScriptRoot
 
 Push-Location $root
 try {
-    python .\config\build_collector_config.py
+    python .\infra\otel-collector\build_collector_config.py
     docker compose up -d
 } finally {
     Pop-Location

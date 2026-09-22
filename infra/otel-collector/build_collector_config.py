@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the OpenTelemetry Collector config from config/agents/*.yaml."""
+"""Build the OpenTelemetry Collector config from infra/otel-collector/agents/*.yaml."""
 from __future__ import annotations
 
 import argparse
@@ -7,6 +7,10 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
+
+# Signals forwarded to the Java `ingest` service (metrics stay in the raw files only:
+# they are large, repetitive snapshots and ingest has no use for them yet).
+INGEST_SIGNALS = {"traces", "logs"}
 
 
 def read_definition(path: Path) -> dict[str, str]:
@@ -43,6 +47,7 @@ def build_config(definitions: list[dict[str, str]]) -> str:
                 "    include:",
                 f"      - {item['input']}",
                 "    start_at: beginning",
+                "    storage: file_storage/checkpoint",
                 "    operators:",
                 "      - type: json_parser",
                 "        parse_from: body",
@@ -56,6 +61,9 @@ def build_config(definitions: list[dict[str, str]]) -> str:
                 exporters.extend([
                     f"  {exporter_name}:",
                     f"    path: /var/log/otel/{output_name}/{output_file}",
+                    # Without append the file exporter truncates the file on every
+                    # (re)start of the collector, i.e. the raw payloads would be lost.
+                    "    append: true",
                 ])
                 pipelines.extend([
                     f"    {signal}/{name}:",
@@ -70,12 +78,21 @@ def build_config(definitions: list[dict[str, str]]) -> str:
                 exporters.extend([
                     f"  {exporter_name}:",
                     f"    path: /var/log/otel/{output_name}/{output_file}",
+                    # Without append the file exporter truncates the file on every
+                    # (re)start of the collector, i.e. the raw payloads would be lost.
+                    "    append: true",
                 ])
+                # The file copy above is the safety net: if ingest is down longer than the
+                # exporter's retry window the forwarded batch is dropped, but the raw
+                # payload is still on disk and can be replayed.
+                targets = [exporter_name]
+                if signal in INGEST_SIGNALS:
+                    targets.append("otlphttp/ingest")
                 pipelines.extend([
                     f"    {signal}/{name}:",
                     f"      receivers: [routing/{signal}]",
                     "      processors: [batch]",
-                    f"      exporters: [{exporter_name}, debug]",
+                    f"      exporters: [{', '.join(targets)}, debug]",
                 ])
         else:
             raise ValueError(f"{name}: unsupported kind {item['kind']!r}")
@@ -101,6 +118,14 @@ def build_config(definitions: list[dict[str, str]]) -> str:
             f"      exporters: [routing/{signal}]",
         ])
 
+    if otlp_agents:
+        exporters.extend([
+            "  otlphttp/ingest:",
+            "    endpoint: http://ingest:8080",
+            "    encoding: json",      # ingest only speaks OTLP/JSON, never protobuf
+            "    compression: none",   # ingest does not decompress request bodies
+        ])
+
     template = (ROOT / "base.yaml").read_text(encoding="utf-8")
     replacements = {
         "{{RECEIVERS}}": "\n".join(receivers),
@@ -119,7 +144,7 @@ def main() -> int:
     args = parser.parse_args()
     definitions = [read_definition(path) for path in sorted((ROOT / "agents").glob("*.yaml"))]
     if not definitions:
-        raise SystemExit("No agent definitions found in config/agents")
+        raise SystemExit("No agent definitions found in infra/otel-collector/agents")
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(build_config(definitions), encoding="utf-8")
     print(f"Generated {args.out} from {len(definitions)} agent definition(s)")

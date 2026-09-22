@@ -2,12 +2,12 @@
 """hook-log.jsonl を 1ターン(prompt_id)ごとに要約する。
 
 使い方:
-    python trace_summary.py hook-log.jsonl
-    python trace_summary.py hook-log.jsonl --last 3 --out summary.md
-    python trace_summary.py hook-log.jsonl --format json --out turns.json
+    python tools/trace_summary.py hook-log.jsonl
+    python tools/trace_summary.py hook-log.jsonl --last 3 --out summary.md
+    python tools/trace_summary.py hook-log.jsonl --format json --out turns.json
 
 標準ライブラリだけで動く。関数は副作用が無いので、そのまま import して使える。
-    from trace_summary import load_events, build_turns
+    from trace_summary import load_events, build_turns   # tools/ を sys.path に置く
 """
 from __future__ import annotations
 

@@ -9,6 +9,7 @@ receivers:
     include:
       - /var/log/agents/claude/hook-log.jsonl
     start_at: beginning
+    storage: file_storage/checkpoint
     operators:
       - type: json_parser
         parse_from: body
@@ -22,18 +23,29 @@ processors:
 exporters:
   file/logs/claude-hook:
     path: /var/log/otel/claude/hook-logs.jsonl
+    append: true
   file/traces/claude:
     path: /var/log/otel/claude/traces.jsonl
+    append: true
   file/metrics/claude:
     path: /var/log/otel/claude/metrics.jsonl
+    append: true
   file/logs/claude:
     path: /var/log/otel/claude/logs.jsonl
+    append: true
   file/traces/githubcopilot:
     path: /var/log/otel/githubcopilot/traces.jsonl
+    append: true
   file/metrics/githubcopilot:
     path: /var/log/otel/githubcopilot/metrics.jsonl
+    append: true
   file/logs/githubcopilot:
     path: /var/log/otel/githubcopilot/logs.jsonl
+    append: true
+  otlphttp/ingest:
+    endpoint: http://ingest:8080
+    encoding: json
+    compression: none
   debug:
     verbosity: detailed
 
@@ -63,7 +75,15 @@ connectors:
         condition: 'resource.attributes["service.name"] == "copilot-chat"'
         pipelines: [traces/githubcopilot]
 
+extensions:
+  # Persists filelog read offsets, so a collector restart does not re-read
+  # (and, with append: true, re-append) files from the beginning.
+  file_storage/checkpoint:
+    directory: /var/log/otel/_checkpoints
+    create_directory: true
+
 service:
+  extensions: [file_storage/checkpoint]
   pipelines:
     logs/claude-hook:
       receivers: [file_log/claude-hook]
@@ -72,7 +92,7 @@ service:
     traces/claude:
       receivers: [routing/traces]
       processors: [batch]
-      exporters: [file/traces/claude, debug]
+      exporters: [file/traces/claude, otlphttp/ingest, debug]
     metrics/claude:
       receivers: [routing/metrics]
       processors: [batch]
@@ -80,11 +100,11 @@ service:
     logs/claude:
       receivers: [routing/logs]
       processors: [batch]
-      exporters: [file/logs/claude, debug]
+      exporters: [file/logs/claude, otlphttp/ingest, debug]
     traces/githubcopilot:
       receivers: [routing/traces]
       processors: [batch]
-      exporters: [file/traces/githubcopilot, debug]
+      exporters: [file/traces/githubcopilot, otlphttp/ingest, debug]
     metrics/githubcopilot:
       receivers: [routing/metrics]
       processors: [batch]
@@ -92,7 +112,7 @@ service:
     logs/githubcopilot:
       receivers: [routing/logs]
       processors: [batch]
-      exporters: [file/logs/githubcopilot, debug]
+      exporters: [file/logs/githubcopilot, otlphttp/ingest, debug]
     logs:
       receivers: [otlp]
       processors: [batch]

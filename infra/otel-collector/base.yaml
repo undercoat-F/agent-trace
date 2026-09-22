@@ -1,0 +1,31 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+{{RECEIVERS}}
+
+processors:
+  batch: {}
+
+exporters:
+{{EXPORTERS}}
+  debug:
+    verbosity: detailed
+
+connectors:
+{{CONNECTORS}}
+
+extensions:
+  # Persists filelog read offsets, so a collector restart does not re-read
+  # (and, with append: true, re-append) files from the beginning.
+  file_storage/checkpoint:
+    directory: /var/log/otel/_checkpoints
+    create_directory: true
+
+service:
+  extensions: [file_storage/checkpoint]
+  pipelines:
+{{PIPELINES}}
