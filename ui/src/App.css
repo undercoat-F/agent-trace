@@ -305,6 +305,80 @@ body {
   color: var(--text-muted);
 }
 
+.judgment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.judgment-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--bg);
+}
+
+.judgment-card__question {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.judgment-card__value {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.judgment-card__legend {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.probability-bars {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.probability-bars li {
+  display: grid;
+  grid-template-columns: 90px 1fr 40px;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+}
+
+.probability-bars__label {
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.probability-bars__track {
+  background: var(--unset-bg);
+  border-radius: 3px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.probability-bars__fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.probability-bars__pct {
+  text-align: right;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .sha-short {
   font-family: ui-monospace, Consolas, monospace;
   background: var(--unset-bg);

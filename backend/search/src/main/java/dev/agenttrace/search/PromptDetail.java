@@ -3,7 +3,9 @@ package dev.agenttrace.search;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/** Full turn detail: the actual prompt/response text, plus its event timeline (concept doc §3). */
+import tools.jackson.databind.JsonNode;
+
+/** Full turn detail: the actual prompt/response text, its event timeline, and Jev's judgments (concept doc §3/§7). */
 public record PromptDetail(
 		String promptId,
 		String sessionId,
@@ -13,7 +15,8 @@ public record PromptDetail(
 		LocalDateTime endedAt,
 		int toolCalls,
 		int failures,
-		List<EventSummary> events) {
+		List<EventSummary> events,
+		List<JudgmentSummary> judgments) {
 
 	public record EventSummary(
 			String eventId,
@@ -22,5 +25,16 @@ public record PromptDetail(
 			LocalDateTime occurredAt,
 			String toolName,
 			String toolSuccess) {
+	}
+
+	public record JudgmentSummary(
+			String questionId,
+			int questionVersion,
+			double value,
+			double confidence,
+			String modelVersion,
+			// The full typed answer (choice label / score legend / probabilities) —
+			// `value`/`confidence` alone can't say e.g. *which* Choice option won.
+			JsonNode rawAnswer) {
 	}
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchPromptDetail } from "../api";
 import type { PromptDetail, PromptRow } from "../types";
 import { eventLabel, formatTime } from "../format";
+import { JudgmentList } from "./JudgmentList";
 
 export function PromptDetailPanel({ prompt }: { prompt: PromptRow }) {
   const [detail, setDetail] = useState<PromptDetail | null>(null);
@@ -44,6 +45,9 @@ export function PromptDetailPanel({ prompt }: { prompt: PromptRow }) {
           {detail.promptId} / {detail.sessionId}
         </dd>
       </dl>
+
+      <h3 className="detail-panel__subtitle">Jev による判定</h3>
+      <JudgmentList judgments={detail.judgments} />
 
       <h3 className="detail-panel__subtitle">経過(このターンで起きたこと)</h3>
       <ol className="event-timeline">

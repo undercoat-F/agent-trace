@@ -41,6 +41,15 @@ export interface PromptEventSummary {
   toolSuccess: string | null; // "true" | "false" | null — a JSON string in the source data, not a boolean
 }
 
+export interface JudgmentSummary {
+  questionId: string;
+  questionVersion: number;
+  value: number;
+  confidence: number;
+  modelVersion: string;
+  rawAnswer: unknown;
+}
+
 export interface PromptDetail {
   promptId: string;
   sessionId: string;
@@ -51,6 +60,7 @@ export interface PromptDetail {
   toolCalls: number;
   failures: number;
   events: PromptEventSummary[];
+  judgments: JudgmentSummary[];
 }
 
 export interface BranchSummary {

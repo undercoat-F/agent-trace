@@ -41,3 +41,35 @@ const EVENT_LABELS: Record<string, string> = {
 export function eventLabel(eventName: string): string {
   return EVENT_LABELS[eventName] ?? eventName;
 }
+
+// Mirrors backend/ingest/.../jev/QuestionCatalog.java. Keep in sync if that changes.
+const QUESTION_LABELS: Record<string, string> = {
+  bugfix_intent: "バグ修正の意図",
+  stuck: "行き詰まり",
+  deviates_from_design: "設計方針からの逸脱",
+  change_type: "変更の主目的",
+  impact_score: "影響範囲の大きさ",
+};
+
+export function questionLabel(questionId: string): string {
+  return QUESTION_LABELS[questionId] ?? questionId;
+}
+
+export function formatPercent(value: number): string {
+  return `${Math.round(value * 100)}%`;
+}
+
+// change_type's Choice option keys -> short display labels (criteria in
+// QuestionCatalog.java has the full descriptions Jev sees; these are just
+// for the UI).
+const CHOICE_OPTION_LABELS: Record<string, string> = {
+  feature: "機能追加",
+  bugfix: "バグ修正",
+  refactor: "リファクタ",
+  dependency_update: "依存更新",
+  experiment: "実験",
+};
+
+export function choiceOptionLabel(key: string): string {
+  return CHOICE_OPTION_LABELS[key] ?? key;
+}

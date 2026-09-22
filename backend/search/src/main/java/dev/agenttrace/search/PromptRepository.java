@@ -7,8 +7,10 @@ import java.util.Optional;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Repository;
+import tools.jackson.databind.json.JsonMapper;
 
 import dev.agenttrace.search.PromptDetail.EventSummary;
+import dev.agenttrace.search.PromptDetail.JudgmentSummary;
 
 /**
  * Deterministic SQL only (concept doc §5), same as SpanRepository. prompts is
@@ -22,9 +24,11 @@ public class PromptRepository {
 	private static final int PREVIEW_LENGTH = 80;
 
 	private final JdbcClient jdbc;
+	private final JsonMapper mapper;
 
-	public PromptRepository(JdbcClient jdbc) {
+	public PromptRepository(JdbcClient jdbc, JsonMapper mapper) {
 		this.jdbc = jdbc;
+		this.mapper = mapper;
 	}
 
 	/**
@@ -68,11 +72,11 @@ public class PromptRepository {
 						rs.getString("prompt_id"), rs.getString("session_id"),
 						rs.getString("user_prompt"), rs.getString("assistant_response"),
 						rs.getTimestamp("started_at").toLocalDateTime(), rs.getTimestamp("ended_at").toLocalDateTime(),
-						rs.getInt("tool_calls"), rs.getInt("failures"), List.of()))
+						rs.getInt("tool_calls"), rs.getInt("failures"), List.of(), List.of()))
 				.optional();
 		return prompt.map(p -> new PromptDetail(
 				p.promptId(), p.sessionId(), p.userPrompt(), p.assistantResponse(),
-				p.startedAt(), p.endedAt(), p.toolCalls(), p.failures(), events(promptId)));
+				p.startedAt(), p.endedAt(), p.toolCalls(), p.failures(), events(promptId), judgments(promptId)));
 	}
 
 	private List<EventSummary> events(String promptId) {
@@ -87,6 +91,21 @@ public class PromptRepository {
 						rs.getString("event_id"), rs.getInt("event_sequence"), rs.getString("event_name"),
 						rs.getTimestamp("occurred_at").toLocalDateTime(), rs.getString("tool_name"),
 						rs.getString("tool_success")))
+				.list();
+	}
+
+	private List<JudgmentSummary> judgments(String promptId) {
+		return jdbc.sql("""
+				SELECT question_id, question_version, value, confidence, model_version, raw_answer
+				FROM judgments
+				WHERE prompt_id = :promptId
+				ORDER BY question_id
+				""")
+				.param("promptId", promptId)
+				.query((rs, rowNum) -> new JudgmentSummary(
+						rs.getString("question_id"), rs.getInt("question_version"),
+						rs.getDouble("value"), rs.getDouble("confidence"), rs.getString("model_version"),
+						mapper.readTree(rs.getString("raw_answer"))))
 				.list();
 	}
 

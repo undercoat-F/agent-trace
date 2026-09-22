@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { fetchCommitDetail } from "../api";
 import type { CommitDetail, CommitSummary } from "../types";
 import { eventLabel, formatTime } from "../format";
+import { JudgmentList } from "./JudgmentList";
 
 export function CommitDetailPanel({ commit }: { commit: CommitSummary }) {
   const [detail, setDetail] = useState<CommitDetail | null>(null);
@@ -66,6 +67,9 @@ export function CommitDetailPanel({ commit }: { commit: CommitSummary }) {
 
           <h3 className="detail-panel__subtitle">応答</h3>
           <p className="prompt-text">{detail.trace.assistantResponse ?? <span className="muted">(記録なし)</span>}</p>
+
+          <h3 className="detail-panel__subtitle">Jev による判定</h3>
+          <JudgmentList judgments={detail.trace.judgments} />
 
           <h3 className="detail-panel__subtitle">経過(このターンで起きたこと)</h3>
           <ol className="event-timeline">
