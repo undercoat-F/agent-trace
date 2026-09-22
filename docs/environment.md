@@ -15,6 +15,15 @@ Maven はPCに入れていない。`backend/mvnw`(Mavenラッパー)を使うか
 ビルドの正本はDocker(`backend/Dockerfile`)で、PCのJDKはエディタ補完・デバッグ用。
 VS Code の Java 拡張は各モジュールごとに `bin/` へ影のビルドを作る(`.gitignore` 済み)。重い/固まる場合は安全に削除してよい(再生成される)。
 
+### Python の標準入出力(`PYTHONUTF8`)
+
+`scripts/setup-python-utf8.ps1` がユーザー環境変数として設定する(`PYTHONUTF8=1`、`PYTHONIOENCODING=utf-8`。`up.ps1` からも呼ばれる)。
+
+- **背景:** Windows の日本語ロケールでは、Python の標準入出力が既定でコンソールのコードページ(`cp932`)を使う。API のレスポンス(UTF-8で正しい)を `python -m json.tool` などで覗くと文字化けして見え、「アプリ側のバグ」と誤認しやすい。実際に本セッションでこれが起き、原因調査に時間を使った(サーバー側は最初から正しかった)。
+- **対処:** システム全体のコードページ(`chcp`)は変えず、Python だけに絞って UTF-8 を強制する(影響範囲を最小にするため)。
+- 反映は新しい端末から。既に開いている端末には効かない。
+- 別PCでこのリポジトリを使うときも、`scripts\setup-python-utf8.ps1` を実行しておくと同じ誤診断を避けられる。
+
 ## VS Code のグローバル設定(`%APPDATA%\Code\User\settings.json`)
 
 `scripts/setup-vscode-otel.ps1` が追記する(手で直さない。既存キーは上書きしない)。
