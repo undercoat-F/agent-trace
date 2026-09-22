@@ -1,6 +1,9 @@
 services:
   mysql:
-    image: mysql:latest
+    # Pinned by digest (the "mysql" tag this resolved to at the time; numeric
+    # version tags aren't reachable from this environment to verify, digest is
+    # exact regardless). Reported server version: 26.7.0.
+    image: mysql@sha256:45abdd9b4144660b5c93a5b7d0ebb21e024f0ba9851ecb4ab43bf83c6bf83592
     container_name: agent-trace-mysql
 
     environment:
@@ -8,28 +11,50 @@ services:
       MYSQL_DATABASE: agent_trace
       MYSQL_USER: agenttrace
       MYSQL_PASSWORD: agenttrace
-    
+
     ports:
-      - "3306:3306"
-    
+      - "127.0.0.1:3306:3306"
+
     volumes:
       - mysql_data:/var/lib/mysql
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:latest
+    # Pinned by digest, same reasoning as mysql above. Reported version: 0.161.0.
+    image: otel/opentelemetry-collector-contrib@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1
     container_name: agent-trace-otel-collector
     restart: unless-stopped
 
     command: ["--config=/etc/otel-collector-config.yaml"]
 
     volumes:
-      - ./config/generated/collector.yaml:/etc/otel-collector-config.yaml:ro
+      - ./infra/otel-collector/generated/collector.yaml:/etc/otel-collector-config.yaml:ro
       - ./otel-data:/var/log/otel
       - ./jsonoutputtest:/var/log/agents/claude:ro
 
     ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "127.0.0.1:4317:4317"   # OTLP gRPC
+      - "127.0.0.1:4318:4318"   # OTLP HTTP
+
+  # Java receiver: OTLP/HTTP (JSON) -> raw_payloads + spans in MySQL.
+  # The OTel Collector forwards here; agents never talk to it directly.
+  ingest:
+    build:
+      context: ./backend
+      args:
+        MODULE: ingest
+    container_name: agent-trace-ingest
+    restart: unless-stopped
+
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/agent_trace?connectionTimeZone=UTC
+      DB_USER: agenttrace
+      DB_PASSWORD: agenttrace
+
+    depends_on:
+      - mysql
+
+    ports:
+      - "127.0.0.1:8081:8080"   # localhost only; the collector reaches it as http://ingest:8080
 
 volumes:
   mysql_data:
