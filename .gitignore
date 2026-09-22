@@ -5,3 +5,6 @@ jsonoutputtest*/
 
 __pycache__/
 *.pyc
+
+# Java/Maven build output (builds normally happen inside Docker)
+target/
