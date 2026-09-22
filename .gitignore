@@ -8,3 +8,8 @@ __pycache__/
 
 # Java/Maven build output (builds normally happen inside Docker)
 target/
+# VS Code Java extension's own shadow build (Eclipse JDT Language Server)
+bin/
+.settings/
+.project
+.classpath

@@ -13,6 +13,7 @@ import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
+import dev.agenttrace.ingest.LogMapper.EventRow;
 import dev.agenttrace.ingest.SpanMapper.SpanRow;
 
 /**
@@ -28,12 +29,17 @@ public class OtlpController {
 
 	private final JsonMapper mapper;
 	private final SpanMapper spanMapper;
-	private final PayloadStore store;
+	private final PayloadStore spanStore;
+	private final LogMapper logMapper;
+	private final EventStore eventStore;
 
-	public OtlpController(JsonMapper mapper, SpanMapper spanMapper, PayloadStore store) {
+	public OtlpController(JsonMapper mapper, SpanMapper spanMapper, PayloadStore spanStore,
+			LogMapper logMapper, EventStore eventStore) {
 		this.mapper = mapper;
 		this.spanMapper = spanMapper;
-		this.store = store;
+		this.spanStore = spanStore;
+		this.logMapper = logMapper;
+		this.eventStore = eventStore;
 	}
 
 	@PostMapping(path = "/v1/traces", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -43,19 +49,20 @@ public class OtlpController {
 			return ResponseEntity.badRequest().body("{\"error\":\"invalid JSON\"}");
 		}
 		List<SpanRow> spans = spanMapper.map(root);
-		PayloadStore.Result r = store.store("traces", body, spans);
+		PayloadStore.Result r = spanStore.store("traces", body, spans);
 		log.info("traces raw={} duplicate={} spans={}", r.rawPayloadId(), r.duplicate(), r.spans());
 		return json(OTLP_OK);
 	}
 
-	/** Logs are kept raw for now (principle 1); expansion into events comes later. */
 	@PostMapping(path = "/v1/logs", consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> logs(@RequestBody String body) {
-		if (parse(body) == null) {
+		JsonNode root = parse(body);
+		if (root == null) {
 			return ResponseEntity.badRequest().body("{\"error\":\"invalid JSON\"}");
 		}
-		PayloadStore.Result r = store.store("logs", body, List.of());
-		log.info("logs raw={} duplicate={}", r.rawPayloadId(), r.duplicate());
+		List<EventRow> events = logMapper.map(root);
+		EventStore.Result r = eventStore.store(body, events);
+		log.info("logs raw={} duplicate={} events={}", r.rawPayloadId(), r.duplicate(), r.events());
 		return json(OTLP_OK);
 	}
 

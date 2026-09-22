@@ -1,10 +1,7 @@
 package dev.agenttrace.ingest;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +31,7 @@ public class SpanMapper {
 	public List<SpanRow> map(JsonNode root) {
 		List<SpanRow> rows = new ArrayList<>();
 		for (JsonNode resourceSpans : root.path("resourceSpans")) {
-			Map<String, Object> resourceAttrs = attributes(resourceSpans.path("resource").path("attributes"));
+			Map<String, Object> resourceAttrs = OtlpAttributes.flatten(resourceSpans.path("resource").path("attributes"));
 			String serviceName = resourceAttrs.get("service.name") instanceof String s ? s : null;
 			for (JsonNode scopeSpans : resourceSpans.path("scopeSpans")) {
 				for (JsonNode span : scopeSpans.path("spans")) {
@@ -54,8 +51,8 @@ public class SpanMapper {
 		if (traceId == null || spanId == null) {
 			return null; // cannot be keyed; the raw payload still holds it
 		}
-		Long startNanos = nanos(span.path("startTimeUnixNano"));
-		Long endNanos = nanos(span.path("endTimeUnixNano"));
+		Long startNanos = OtlpAttributes.nanos(span.path("startTimeUnixNano"));
+		Long endNanos = OtlpAttributes.nanos(span.path("endTimeUnixNano"));
 		if (startNanos == null) {
 			return null;
 		}
@@ -68,76 +65,16 @@ public class SpanMapper {
 				text(span.path("name")) == null ? "" : text(span.path("name")),
 				kind(span.path("kind")),
 				serviceName,
-				utc(startNanos),
-				endNanos == null ? null : utc(endNanos),
+				OtlpAttributes.utc(startNanos),
+				endNanos == null ? null : OtlpAttributes.utc(endNanos),
 				durationMs,
 				statusCode(status.path("code")),
 				text(status.path("message")),
-				mapper.writeValueAsString(attributes(span.path("attributes"))));
-	}
-
-	/** OTLP KeyValue list -> flat {key: typed value}. */
-	private Map<String, Object> attributes(JsonNode keyValues) {
-		Map<String, Object> out = new LinkedHashMap<>();
-		for (JsonNode kv : keyValues) {
-			String key = text(kv.path("key"));
-			if (key != null) {
-				out.put(key, anyValue(kv.path("value")));
-			}
-		}
-		return out;
-	}
-
-	private Object anyValue(JsonNode v) {
-		if (v.has("stringValue")) {
-			return v.path("stringValue").asString();
-		}
-		if (v.has("intValue")) {
-			JsonNode n = v.path("intValue");
-			return n.isNumber() ? n.asLong() : Long.parseLong(n.asString());
-		}
-		if (v.has("doubleValue")) {
-			return v.path("doubleValue").asDouble();
-		}
-		if (v.has("boolValue")) {
-			return v.path("boolValue").asBoolean();
-		}
-		if (v.has("bytesValue")) {
-			return v.path("bytesValue").asString(); // base64, kept as text
-		}
-		if (v.has("arrayValue")) {
-			List<Object> list = new ArrayList<>();
-			for (JsonNode item : v.path("arrayValue").path("values")) {
-				list.add(anyValue(item));
-			}
-			return list;
-		}
-		if (v.has("kvlistValue")) {
-			return attributes(v.path("kvlistValue").path("values"));
-		}
-		return null;
+				mapper.writeValueAsString(OtlpAttributes.flatten(span.path("attributes"))));
 	}
 
 	private static String text(JsonNode n) {
-		if (n.isMissingNode() || n.isNull()) {
-			return null;
-		}
-		String s = n.asString();
-		return s.isEmpty() ? null : s;
-	}
-
-	private static Long nanos(JsonNode n) {
-		String s = text(n);
-		if (s == null) {
-			return null;
-		}
-		long v = Long.parseLong(s);
-		return v == 0 ? null : v;
-	}
-
-	private static LocalDateTime utc(long epochNanos) {
-		return LocalDateTime.ofInstant(
-				Instant.ofEpochSecond(epochNanos / 1_000_000_000L, epochNanos % 1_000_000_000L), ZoneOffset.UTC);
+		return OtlpAttributes.text(n);
 	}
 
 	private static int kind(JsonNode n) {
