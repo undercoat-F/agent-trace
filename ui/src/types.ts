@@ -52,3 +52,27 @@ export interface PromptDetail {
   failures: number;
   events: PromptEventSummary[];
 }
+
+export interface BranchSummary {
+  name: string;
+  headSha: string;
+}
+
+export interface CommitSummary {
+  sha: string;
+  shortMessage: string;
+  author: string;
+  authoredAt: string;
+  hasTrace: boolean;
+}
+
+export interface CommitDetail {
+  sha: string;
+  message: string;
+  author: string;
+  authoredAt: string;
+  parents: string[];
+  hasTrace: boolean;
+  filesChanged: string[];
+  trace: PromptDetail | null;
+}

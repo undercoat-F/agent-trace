@@ -35,6 +35,15 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Reads the project's own .git directly (mounted read-only) for branch/commit
+		     browsing, per concept doc §3: the reverse-lookup entry point should be a
+		     familiar git log, not just the commits we happen to have AI traces for. -->
+		<dependency>
+			<groupId>org.eclipse.jgit</groupId>
+			<artifactId>org.eclipse.jgit</artifactId>
+			<version>7.8.0.202609011348-r</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>

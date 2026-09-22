@@ -74,6 +74,12 @@ services:
       DB_USER: agenttrace_ro
       DB_PASSWORD: JtdiJzIUEN2Fep6ZOJubaFFP
       UI_ORIGIN: http://localhost:5173
+      GIT_REPO_PATH: /repo/.git
+
+    volumes:
+      # Read-only: search only ever reads git history (branch/commit browsing,
+      # concept doc §3). Never write here.
+      - ./.git:/repo/.git:ro
 
     depends_on:
       - mysql

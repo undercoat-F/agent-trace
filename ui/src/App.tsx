@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { SpansView } from "./views/SpansView";
 import { PromptsView } from "./views/PromptsView";
+import { CommitsView } from "./views/CommitsView";
 import "./App.css";
 
-type Tab = "spans" | "prompts";
+type Tab = "spans" | "prompts" | "commits";
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("spans");
@@ -22,9 +23,14 @@ export default function App() {
         <button role="tab" aria-selected={tab === "prompts"} className={tab === "prompts" ? "is-active" : ""} onClick={() => setTab("prompts")}>
           Claude Code(ターン)
         </button>
+        <button role="tab" aria-selected={tab === "commits"} className={tab === "commits" ? "is-active" : ""} onClick={() => setTab("commits")}>
+          コミット逆引き
+        </button>
       </nav>
 
-      {tab === "spans" ? <SpansView /> : <PromptsView />}
+      {tab === "spans" && <SpansView />}
+      {tab === "prompts" && <PromptsView />}
+      {tab === "commits" && <CommitsView />}
     </div>
   );
 }

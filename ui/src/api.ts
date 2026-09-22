@@ -1,4 +1,4 @@
-import type { PromptDetail, PromptRow, SpanDetail, SpanRow, StatusFilter } from "./types";
+import type { BranchSummary, CommitDetail, CommitSummary, PromptDetail, PromptRow, SpanDetail, SpanRow, StatusFilter } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8082";
 
@@ -68,4 +68,17 @@ export function searchPrompts(params: PromptSearchParams): Promise<PromptRow[]> 
 
 export function fetchPromptDetail(promptId: string): Promise<PromptDetail> {
   return get<PromptDetail>(`/api/prompts/${promptId}`);
+}
+
+export function fetchBranches(): Promise<BranchSummary[]> {
+  return get<BranchSummary[]>("/api/branches");
+}
+
+export function fetchCommits(branch: string, limit = 50, offset = 0): Promise<CommitSummary[]> {
+  const qs = new URLSearchParams({ branch, limit: String(limit), offset: String(offset) });
+  return get<CommitSummary[]>(`/api/commits?${qs}`);
+}
+
+export function fetchCommitDetail(sha: string): Promise<CommitDetail> {
+  return get<CommitDetail>(`/api/commits/${sha}`);
 }
