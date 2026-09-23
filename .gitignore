@@ -3,6 +3,8 @@ hook-log.jsonl
 otel-out*.txt
 otel-data*/
 jsonoutputtest*/
+.vscode/
+docs/
 
 __pycache__/
 *.pyc
