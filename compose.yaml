@@ -7,10 +7,10 @@ services:
     container_name: agent-trace-mysql
 
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: agent_trace
-      MYSQL_USER: agenttrace
-      MYSQL_PASSWORD: agenttrace
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
 
     ports:
       - "127.0.0.1:3306:3306"
@@ -49,9 +49,9 @@ services:
     restart: unless-stopped
 
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/agent_trace?connectionTimeZone=UTC&characterEncoding=UTF-8
-      DB_USER: agenttrace
-      DB_PASSWORD: agenttrace
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DB}?connectionTimeZone=UTC&characterEncoding=UTF-8
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
       # ${jevkey} is Compose's own .env substitution (root .env, gitignored):
       # the value never passes through anything Claude reads or writes.
       JEV_API_KEY: ${jevkey}
@@ -73,9 +73,9 @@ services:
     restart: unless-stopped
 
     environment:
-      DB_URL: jdbc:mysql://mysql:3306/agent_trace?connectionTimeZone=UTC&characterEncoding=UTF-8
-      DB_USER: agenttrace_ro
-      DB_PASSWORD: JtdiJzIUEN2Fep6ZOJubaFFP
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DB}?connectionTimeZone=UTC&characterEncoding=UTF-8
+      DB_USER: ${MYSQL_RO_USER}
+      DB_PASSWORD: ${MYSQL_RO_PASSWORD}
       UI_ORIGIN: http://localhost:5173
       GIT_REPO_PATH: /repo/.git
 
